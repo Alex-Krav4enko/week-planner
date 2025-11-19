@@ -1,0 +1,3 @@
+.addTaskButton {
+  @apply mt-2 text-blue-600 font-medium hover:underline;
+}

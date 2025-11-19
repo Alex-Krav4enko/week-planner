@@ -1,0 +1,11 @@
+.weekNavigation {
+  @apply flex items-center justify-between w-full max-w-[30rem] p-4;
+}
+
+.navButton {
+  @apply p-2 rounded-full hover:bg-gray-200 transition duration-300;
+}
+
+.weekTitle {
+  @apply text-xl font-bold text-gray-800;
+}

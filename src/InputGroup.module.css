@@ -1,0 +1,15 @@
+.inputGroup {
+  @apply flex items-center gap-2 mb-2;
+}
+
+.taskInput {
+  @apply flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.hoursInput {
+  @apply w-16 p-2 border border-gray-300 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.copyButton {
+  @apply p-2 text-gray-500 hover:text-blue-500 transition duration-200;
+}

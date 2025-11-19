@@ -1,0 +1,35 @@
+.dayGroup {
+  @apply flex flex-col gap-4 p-8 w-full max-w-[1086px] mx-auto bg-gray-50 rounded-lg shadow-sm;
+}
+
+.header {
+  @apply flex justify-between items-center pb-4;
+}
+
+.dayInfo {
+  @apply flex flex-col;
+}
+
+.dayLabel {
+  @apply text-xl font-bold text-gray-800;
+}
+
+.dayDate {
+  @apply text-sm text-gray-500;
+}
+
+.headerRight {
+  @apply flex items-center gap-4;
+}
+
+.totalHours {
+  @apply text-lg font-semibold text-gray-800;
+}
+
+.addTaskButton {
+  @apply bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition;
+}
+
+.tasks {
+  @apply flex flex-wrap gap-6;
+}

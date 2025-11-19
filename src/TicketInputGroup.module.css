@@ -1,0 +1,49 @@
+.ticketGroup {
+  @apply flex flex-col gap-4 p-8 rounded-md border border-gray-300 bg-white transition duration-300;
+}
+
+.copied {
+  @apply bg-gray-100 opacity-50;
+}
+
+.row {
+  @apply flex items-center gap-4;
+}
+
+.ticketDisplay {
+  @apply text-sm font-semibold text-gray-800;
+}
+
+.linkInput,
+.hoursInput {
+  @apply border-b border-gray-300 rounded-none focus:outline-none focus:border-blue-500;
+}
+
+.hoursInput {
+  @apply w-20 text-center;
+}
+
+.buttons {
+  @apply flex gap-2 ml-auto;
+}
+
+.iconButton {
+  @apply text-gray-500 hover:text-blue-500 transition duration-300 p-1 rounded-md;
+}
+
+.copiedIcon {
+  @apply text-green-500;
+}
+
+.column {
+  @apply flex flex-col gap-2;
+}
+
+.titleInput,
+.descriptionInput {
+  @apply h-10 border-b border-gray-300 focus:outline-none focus:border-blue-500;
+}
+
+.descriptionInput {
+  @apply resize-none;
+}
