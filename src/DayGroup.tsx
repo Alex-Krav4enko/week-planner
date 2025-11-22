@@ -1,66 +1,220 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  createEntry,
+  deleteEntry,
+  fetchEntriesByDate,
+  updateEntry,
+} from './api/entries';
+import { createTask, updateTask } from './api/tasks';
 import TicketInputGroup from './TicketInputGroup';
 import styles from './DayGroup.module.css';
+import { Entry } from './api/types';
 
 interface DayGroupProps {
   day: string;
   date: string;
+  isoDate?: string;
 }
 
-interface Task {
-  id: number;
+const generateLocalId = () =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `ticket-${Math.random().toString(36).slice(2, 9)}`;
+
+interface TicketState {
+  localId: string;
+  entryId?: string;
+  taskId?: string;
+  title: string;
+  link: string;
+  description: string;
   hours: number | null;
+  isSaving: boolean;
+  error: string | null;
 }
 
-export default function DayGroup({ day, date }: DayGroupProps) {
-  const [tasks, setTasks] = useState<Task[]>([{ id: 1, hours: null }]);
-  const [totalHours, setTotalHours] = useState(0);
+function mapEntryToTicket(entry: Entry): TicketState {
+  return {
+    localId: entry.id,
+    entryId: entry.id,
+    taskId: entry.task.id,
+    title: entry.task.title,
+    link: entry.task.link,
+    description: entry.description ?? '',
+    hours: entry.hours ?? 0,
+    isSaving: false,
+    error: null,
+  };
+}
+
+export default function DayGroup({ day, date, isoDate }: DayGroupProps) {
+  const [tickets, setTickets] = useState<TicketState[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isoDate) {
+      return;
+    }
+
+    async function loadEntries() {
+      try {
+        setIsLoading(true);
+        setLoadError(null);
+        const entries = await fetchEntriesByDate(isoDate);
+        setTickets(entries.map(mapEntryToTicket));
+      } catch (err) {
+        setLoadError(
+          err instanceof Error ? err.message : 'Не удалось загрузить задачи',
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadEntries();
+  }, [isoDate]);
+
+  const totalHours = useMemo(
+    () =>
+      tickets.reduce((sum, ticket) => sum + (ticket.hours ?? 0), 0),
+    [tickets],
+  );
 
   const addTask = () => {
-    setTasks((prevTasks) => {
-      const nextId =
-        prevTasks.length > 0
-          ? prevTasks[prevTasks.length - 1].id + 1
-          : 1;
-      const updatedTasks = [...prevTasks, { id: nextId, hours: null }];
-      calculateTotalHours(updatedTasks);
-      return updatedTasks;
-    });
+    setTickets((prev) => [
+      ...prev,
+      {
+        localId: generateLocalId(),
+        title: '',
+        link: '',
+        description: '',
+        hours: null,
+        isSaving: false,
+        error: null,
+      },
+    ]);
   };
 
-  const removeTask = (id: number) => {
-    setTasks((prevTasks) => {
-      const updatedTasks = prevTasks.filter((task) => task.id !== id);
-      calculateTotalHours(updatedTasks);
-      return updatedTasks;
-    });
-  };
-
-  const updateHours = (id: number, hours: number | null) => {
-    setTasks((prevTasks) => {
-      const updatedTasks = prevTasks.map((task) =>
-        task.id === id ? { ...task, hours } : task,
-      );
-      calculateTotalHours(updatedTasks);
-      return updatedTasks;
-    });
-  };
-
-  const calculateTotalHours = (taskList: Task[]) => {
-    const total = taskList.reduce(
-      (sum, task) => sum + (task.hours ?? 0),
-      0,
+  const updateTicket = (
+    localId: string,
+    updates: Partial<TicketState>,
+  ) => {
+    setTickets((prev) =>
+    prev.map((ticket) =>
+        ticket.localId === localId ? { ...ticket, ...updates } : ticket,
+      ),
     );
-    setTotalHours(total);
   };
 
-  const handleCopy = (id: number) => {
-    console.log(`Копирование данных для задачи с ID ${id}`);
+  const removeTicket = async (localId: string) => {
+    const ticket = tickets.find((item) => item.localId === localId);
+    if (!ticket) {
+      return;
+    }
+
+    if (!ticket.entryId) {
+      setTickets((prev) => prev.filter((item) => item.localId !== localId));
+      return;
+    }
+
+    updateTicket(localId, { isSaving: true, error: null });
+    try {
+      await deleteEntry(ticket.entryId);
+      setTickets((prev) => prev.filter((item) => item.localId !== localId));
+    } catch (err) {
+      updateTicket(localId, {
+        error: err instanceof Error ? err.message : 'Не удалось удалить запись',
+      });
+      updateTicket(localId, { isSaving: false });
+    }
   };
 
-  const handleNavigate = (id: number) => {
-    console.log(`Переход на страницу задачи с ID ${id}`);
+  const handleCopy = async (localId: string) => {
+    const ticket = tickets.find((item) => item.localId === localId);
+    if (!ticket?.link) {
+      return;
+    }
+
+    if (typeof navigator === 'undefined' || !navigator.clipboard) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(ticket.link);
+    } catch {
+      // Игнорируем ошибки (например, отсутствие разрешений)
+    }
   };
+
+  const handleNavigate = (localId: string) => {
+    const ticket = tickets.find((item) => item.localId === localId);
+    if (ticket?.link) {
+      window.open(ticket.link, '_blank');
+    }
+  };
+
+  const handleSave = async (localId: string) => {
+    if (!isoDate) {
+      updateTicket(localId, { error: 'Дата недоступна' });
+      return;
+    }
+
+    const ticket = tickets.find((item) => item.localId === localId);
+    if (!ticket) {
+      return;
+    }
+
+    updateTicket(localId, { isSaving: true, error: null });
+
+    try {
+      let taskId = ticket.taskId;
+
+      if (!taskId) {
+        const task = await createTask({
+          title: ticket.title,
+          link: ticket.link,
+        });
+        taskId = task.id;
+      } else {
+        await updateTask(taskId, {
+          title: ticket.title,
+          link: ticket.link,
+        });
+      }
+
+      let savedEntry: Entry;
+      if (ticket.entryId) {
+        savedEntry = await updateEntry(ticket.entryId, {
+          taskId,
+          date: isoDate,
+          hours: ticket.hours ?? 0,
+          description: ticket.description,
+        });
+      } else {
+        savedEntry = await createEntry({
+          taskId,
+          date: isoDate,
+          hours: ticket.hours ?? 0,
+          description: ticket.description,
+        });
+      }
+
+      updateTicket(localId, {
+        ...mapEntryToTicket(savedEntry),
+        localId,
+      });
+    } catch (err) {
+      updateTicket(localId, {
+        error: err instanceof Error ? err.message : 'Не удалось сохранить',
+      });
+    } finally {
+      updateTicket(localId, { isSaving: false });
+    }
+  };
+
+  const canSaveTicket = (ticket: TicketState) =>
+    Boolean(ticket.title && ticket.link);
 
   return (
     <div id={day.toLowerCase()} className={styles.dayGroup}>
@@ -71,25 +225,54 @@ export default function DayGroup({ day, date }: DayGroupProps) {
         </div>
         <div className={styles.headerRight}>
           <span className={styles.totalHours}>Общее время: {totalHours} ч</span>
-          <button className={styles.addTaskButton} onClick={addTask}>
+          <button
+            className={styles.addTaskButton}
+            onClick={addTask}
+            disabled={!isoDate}
+          >
             + Add Task
           </button>
         </div>
       </div>
 
+      {loadError && (
+        <div className={styles.error}>
+          Не удалось загрузить задачи: {loadError}
+        </div>
+      )}
+
       <div className={styles.tasks}>
-        {tasks.map((task) => (
+        {tickets.map((ticket) => (
           <TicketInputGroup
-            key={task.id}
-            id={task.id}
-            hours={task.hours}
-            onCopy={handleCopy}
-            onNavigate={handleNavigate}
-            onRemove={removeTask}
-            onUpdateHours={updateHours}
+            key={ticket.localId}
+            title={ticket.title}
+            link={ticket.link}
+            description={ticket.description}
+            hours={ticket.hours}
+            isSaving={ticket.isSaving}
+            error={ticket.error}
+            canSave={canSaveTicket(ticket)}
+            onTitleChange={(value) =>
+              updateTicket(ticket.localId, { title: value })
+            }
+            onLinkChange={(value) =>
+              updateTicket(ticket.localId, { link: value })
+            }
+            onDescriptionChange={(value) =>
+              updateTicket(ticket.localId, { description: value })
+            }
+            onUpdateHours={(value) =>
+              updateTicket(ticket.localId, { hours: value })
+            }
+            onCopy={() => handleCopy(ticket.localId)}
+            onNavigate={() => handleNavigate(ticket.localId)}
+            onRemove={() => removeTicket(ticket.localId)}
+            onSave={() => handleSave(ticket.localId)}
           />
         ))}
       </div>
+
+      {isLoading && <div className={styles.loading}>Загрузка...</div>}
     </div>
   );
 }

@@ -6,6 +6,10 @@
   @apply grid grid-cols-7 gap-6 w-full max-w-[80rem];
 }
 
+.error {
+  @apply text-red-500 text-sm;
+}
+
 .dayCard {
   @apply bg-white p-5 w-44 h-44 flex flex-col justify-center rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow duration-300;
 }

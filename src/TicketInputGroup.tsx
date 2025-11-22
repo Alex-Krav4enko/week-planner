@@ -3,20 +3,38 @@ import { FaCopy, FaExternalLinkAlt, FaTrashAlt, FaCheck } from 'react-icons/fa';
 import styles from './TicketInputGroup.module.css';
 
 interface TicketInputGroupProps {
-  id: number;
+  title: string;
+  link: string;
+  description: string;
   hours: number | null;
-  onCopy: (id: number) => void;
-  onNavigate: (id: number) => void;
-  onRemove: (id: number) => void;
-  onUpdateHours: (id: number, hours: number | null) => void;
+  isSaving: boolean;
+  error: string | null;
+  canSave: boolean;
+  onTitleChange: (value: string) => void;
+  onLinkChange: (value: string) => void;
+  onDescriptionChange: (value: string) => void;
+  onCopy: () => void;
+  onNavigate: () => void;
+  onRemove: () => void;
+  onSave: () => void;
+  onUpdateHours: (hours: number | null) => void;
 }
 
 export default function TicketInputGroup({
-  id,
+  title,
+  link,
+  description,
   hours,
+  isSaving,
+  error,
+  canSave,
+  onTitleChange,
+  onLinkChange,
+  onDescriptionChange,
   onCopy,
   onNavigate,
   onRemove,
+  onSave,
   onUpdateHours,
 }: TicketInputGroupProps) {
   const [copied, setCopied] = useState(false);
@@ -26,9 +44,18 @@ export default function TicketInputGroup({
     setHoursValue(hours?.toString() ?? '');
   }, [hours]);
 
+  useEffect(() => {
+    if (!copied) {
+      return;
+    }
+
+    const timer = setTimeout(() => setCopied(false), 1500);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
   const handleCopy = () => {
-    setCopied(!copied);
-    onCopy(id);
+    onCopy();
+    setCopied(true);
   };
 
   const handleHoursChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -36,14 +63,20 @@ export default function TicketInputGroup({
     setHoursValue(value);
 
     const parsedValue = value === '' ? null : Number(value);
-    onUpdateHours(id, Number.isNaN(parsedValue) ? null : parsedValue);
+    onUpdateHours(Number.isNaN(parsedValue) ? null : parsedValue);
   };
 
   return (
     <div className={`${styles.ticketGroup} ${copied ? styles.copied : ''}`}>
       <div className={styles.row}>
         <div className={styles.ticketDisplay}>Тикет</div>
-        <input type="url" placeholder="Ссылка" className={styles.linkInput} />
+        <input
+          type="url"
+          placeholder="Ссылка"
+          className={styles.linkInput}
+          value={link}
+          onChange={(event) => onLinkChange(event.target.value)}
+        />
         <input
           type="number"
           placeholder="Часы"
@@ -52,13 +85,20 @@ export default function TicketInputGroup({
           onChange={handleHoursChange}
         />
         <div className={styles.buttons}>
+          <button
+            className={styles.saveButton}
+            onClick={onSave}
+            disabled={!canSave || isSaving}
+          >
+            {isSaving ? '...' : 'Сохранить'}
+          </button>
           <button className={styles.iconButton} onClick={handleCopy}>
             {copied ? <FaCheck className={styles.copiedIcon} /> : <FaCopy />}
           </button>
-          <button className={styles.iconButton} onClick={() => onNavigate(id)}>
+          <button className={styles.iconButton} onClick={onNavigate}>
             <FaExternalLinkAlt />
           </button>
-          <button className={styles.iconButton} onClick={() => onRemove(id)}>
+          <button className={styles.iconButton} onClick={onRemove}>
             <FaTrashAlt />
           </button>
         </div>
@@ -68,9 +108,17 @@ export default function TicketInputGroup({
           type="text"
           placeholder="Название"
           className={styles.titleInput}
+          value={title}
+          onChange={(event) => onTitleChange(event.target.value)}
         />
-        <input placeholder="Описание" className={styles.descriptionInput} />
+        <input
+          placeholder="Описание"
+          className={styles.descriptionInput}
+          value={description}
+          onChange={(event) => onDescriptionChange(event.target.value)}
+        />
       </div>
+      {error && <div className={styles.error}>{error}</div>}
     </div>
   );
 }

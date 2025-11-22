@@ -17,6 +17,7 @@ export default function DayPage() {
       <DayGroup
         day={currentDay?.name ?? 'Неизвестный день'}
         date={currentDay?.dateLabel ?? 'Дата не указана'}
+        isoDate={currentDay?.isoDate}
       />
     </div>
   );

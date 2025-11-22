@@ -19,10 +19,7 @@ export interface WeekDay {
   name: string;
   isoDate: string;
   dateLabel: string;
-  plannedHours: number;
 }
-
-const PLANNED_HOURS = [5, 3, 4, 6, 2, 0, 0];
 
 export const weekDays: WeekDay[] = DAY_NAMES.map((name, index) => {
   const date = new Date(startOfWeek);
@@ -33,7 +30,6 @@ export const weekDays: WeekDay[] = DAY_NAMES.map((name, index) => {
     name,
     isoDate,
     dateLabel: russianDateFormatter.format(date),
-    plannedHours: PLANNED_HOURS[index] ?? 0,
   };
 });
 
