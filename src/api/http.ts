@@ -1,52 +1,47 @@
+import axios, { type AxiosRequestConfig } from 'axios';
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000';
 
-interface HttpOptions extends RequestInit {
+interface HttpOptions extends AxiosRequestConfig {
   query?: Record<string, string | number | undefined>;
 }
 
-function buildUrl(path: string, query?: HttpOptions['query']) {
-  const url = new URL(path, API_BASE_URL);
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-  if (query) {
-    Object.entries(query).forEach(([key, value]) => {
-      if (value === undefined || value === null) {
-        return;
-      }
-
-      url.searchParams.set(key, String(value));
-    });
+function sanitizeQuery(query?: HttpOptions['query']) {
+  if (!query) {
+    return undefined;
   }
 
-  return url;
+  return Object.entries(query).reduce<Record<string, string | number>>(
+    (acc, [key, value]) => {
+      if (value !== undefined && value !== null) {
+        acc[key] = value;
+      }
+      return acc;
+    },
+    {},
+  );
 }
 
 export async function http<TResponse>(
   path: string,
   options: HttpOptions = {},
 ): Promise<TResponse> {
-  const { query, headers, ...rest } = options;
-  const url = buildUrl(path, query);
+  const { query, ...rest } = options;
 
-  const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
+  const response = await apiClient.request<TResponse>({
+    url: path,
+    params: sanitizeQuery(query),
     ...rest,
   });
 
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(
-      `Request failed with ${response.status}: ${response.statusText}. ${errorBody}`,
-    );
-  }
-
-  if (response.status === 204) {
-    return undefined as TResponse;
-  }
-
-  return (await response.json()) as TResponse;
+  return response.data;
 }
 
