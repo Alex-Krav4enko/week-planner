@@ -62,10 +62,20 @@ export default function TicketInputGroup({
 
   const handleHoursChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
-    setHoursValue(value);
 
-    const parsedValue = value === '' ? null : Number(value);
-    onUpdateHours(Number.isNaN(parsedValue) ? null : parsedValue);
+    if (value === '') {
+      setHoursValue('');
+      onUpdateHours(null);
+      return;
+    }
+
+    const parsedValue = Number(value);
+    if (Number.isNaN(parsedValue) || parsedValue < 0) {
+      return;
+    }
+
+    setHoursValue(value);
+    onUpdateHours(parsedValue);
   };
 
   return (
@@ -84,6 +94,7 @@ export default function TicketInputGroup({
           type="number"
           placeholder="Часы"
           className={styles.hoursInput}
+          min={0}
           value={hoursValue}
           onChange={handleHoursChange}
         />

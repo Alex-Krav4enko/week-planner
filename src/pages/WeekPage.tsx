@@ -21,7 +21,10 @@ export default function WeekPage() {
         const to = weekDays[weekDays.length - 1].isoDate;
         const data = await fetchEntriesSummary(from, to);
         const totals = data.reduce<Record<string, number>>((acc, item) => {
-          acc[item.date] = item.totalHours;
+          const dateKey = item.date.includes('T')
+            ? item.date.split('T')[0]
+            : item.date;
+          acc[dateKey] = item.totalHours;
           return acc;
         }, {});
         setSummary(totals);
