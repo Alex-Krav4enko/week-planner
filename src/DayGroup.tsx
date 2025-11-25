@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
+import { isAxiosError } from 'axios';
 import {
   createEntry,
   deleteEntry,
   fetchEntriesByDate,
   updateEntry,
 } from './api/entries';
-import { createTask, updateTask } from './api/tasks';
+import { createTask, fetchTasks, updateTask } from './api/tasks';
 import TicketInputGroup from './TicketInputGroup';
 import styles from './DayGroup.module.css';
-import { Entry } from './api/types';
+import { Entry, Task } from './api/types';
 
 interface DayGroupProps {
   day: string;
@@ -101,10 +102,56 @@ export default function DayGroup({ day, date, isoDate }: DayGroupProps) {
     updates: Partial<TicketState>,
   ) => {
     setTickets((prev) =>
-    prev.map((ticket) =>
+      prev.map((ticket) =>
         ticket.localId === localId ? { ...ticket, ...updates } : ticket,
       ),
     );
+  };
+
+  const findMatchingTask = async (
+    localId: string,
+  ): Promise<Task | undefined> => {
+    const ticket = tickets.find((item) => item.localId === localId);
+    if (!ticket) {
+      return undefined;
+    }
+
+    const searchValue = ticket.link?.trim() || ticket.title.trim();
+    if (!searchValue) {
+      return undefined;
+    }
+
+    const candidates = await fetchTasks(searchValue);
+    if (!candidates.length) {
+      return undefined;
+    }
+
+    const matchedTask =
+      ticket.link
+        ? candidates.find((task) => task.link === ticket.link) ?? candidates[0]
+        : candidates[0];
+
+    updateTicket(localId, {
+      taskId: matchedTask.id,
+      title: matchedTask.title,
+      link: matchedTask.link,
+      error: null,
+    });
+
+    return matchedTask;
+  };
+
+  const handleLinkLookup = async (localId: string) => {
+    try {
+      await findMatchingTask(localId);
+    } catch (err) {
+      updateTicket(localId, {
+        error:
+          err instanceof Error
+            ? err.message
+            : 'Не удалось найти существующий тикет',
+      });
+    }
   };
 
   const removeTicket = async (localId: string) => {
@@ -171,12 +218,46 @@ export default function DayGroup({ day, date, isoDate }: DayGroupProps) {
       let taskId = ticket.taskId;
 
       if (!taskId) {
-        const task = await createTask({
-          title: ticket.title,
-          link: ticket.link,
+        const existingTask = await findMatchingTask(localId);
+        if (existingTask) {
+          taskId = existingTask.id;
+        }
+      }
+
+      if (!taskId) {
+        try {
+          const task = await createTask({
+            title: ticket.title,
+            link: ticket.link,
+          });
+          taskId = task.id;
+          updateTicket(localId, {
+            taskId: task.id,
+            title: task.title,
+            link: task.link,
+          });
+        } catch (taskError) {
+          if (isAxiosError(taskError) && taskError.response?.status === 409) {
+            const existingTask = await findMatchingTask(localId);
+            if (existingTask) {
+              taskId = existingTask.id;
+            } else {
+              throw taskError;
+            }
+          } else {
+            throw taskError;
+          }
+        }
+      }
+
+      if (!taskId) {
+        updateTicket(localId, {
+          error: 'Не удалось определить задачу',
         });
-        taskId = task.id;
-      } else {
+        return;
+      }
+
+      if (ticket.taskId) {
         await updateTask(taskId, {
           title: ticket.title,
           link: ticket.link,
@@ -258,6 +339,7 @@ export default function DayGroup({ day, date, isoDate }: DayGroupProps) {
             onLinkChange={(value) =>
               updateTicket(ticket.localId, { link: value })
             }
+            onLinkBlur={() => handleLinkLookup(ticket.localId)}
             onDescriptionChange={(value) =>
               updateTicket(ticket.localId, { description: value })
             }

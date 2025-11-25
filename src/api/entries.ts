@@ -21,14 +21,14 @@ export function fetchEntriesSummary(from: string, to: string) {
 export function createEntry(payload: EntryCreate) {
   return http<Entry>('/entries', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    data: payload,
   });
 }
 
 export function updateEntry(id: string, payload: EntryUpdate) {
   return http<Entry>(`/entries/${id}`, {
     method: 'PATCH',
-    body: JSON.stringify(payload),
+    data: payload,
   });
 }
 

@@ -12,6 +12,7 @@ interface TicketInputGroupProps {
   canSave: boolean;
   onTitleChange: (value: string) => void;
   onLinkChange: (value: string) => void;
+  onLinkBlur?: () => void;
   onDescriptionChange: (value: string) => void;
   onCopy: () => void;
   onNavigate: () => void;
@@ -30,6 +31,7 @@ export default function TicketInputGroup({
   canSave,
   onTitleChange,
   onLinkChange,
+  onLinkBlur,
   onDescriptionChange,
   onCopy,
   onNavigate,
@@ -76,6 +78,7 @@ export default function TicketInputGroup({
           className={styles.linkInput}
           value={link}
           onChange={(event) => onLinkChange(event.target.value)}
+          onBlur={onLinkBlur}
         />
         <input
           type="number"

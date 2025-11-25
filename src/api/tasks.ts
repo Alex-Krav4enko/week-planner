@@ -1,12 +1,12 @@
 import { http } from './http';
 import { Task } from './types';
 
-interface TaskCreate {
+export interface TaskCreate {
   title: string;
   link: string;
 }
 
-type TaskUpdate = Partial<TaskCreate>;
+export type TaskUpdate = Partial<TaskCreate>;
 
 export function fetchTasks(search?: string) {
   return http<Task[]>('/tasks', {
@@ -17,14 +17,14 @@ export function fetchTasks(search?: string) {
 export function createTask(payload: TaskCreate) {
   return http<Task>('/tasks', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    data: payload,
   });
 }
 
 export function updateTask(id: string, payload: TaskUpdate) {
   return http<Task>(`/tasks/${id}`, {
     method: 'PATCH',
-    body: JSON.stringify(payload),
+    data: payload,
   });
 }
 
