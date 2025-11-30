@@ -1,8 +1,11 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+type ViteConfigWithTest = import('vite').UserConfig & {
+  // Allow Vitest-specific config without pulling in its full types
+  test?: unknown;
+};
 
-// https://vite.dev/config/
-export default defineConfig({
+const config: ViteConfigWithTest = {
   plugins: [react()],
   test: {
     environment: 'jsdom',
@@ -12,4 +15,7 @@ export default defineConfig({
       reporter: ['text', 'lcov'],
     },
   },
-});
+};
+
+// https://vite.dev/config/
+export default defineConfig(config);
