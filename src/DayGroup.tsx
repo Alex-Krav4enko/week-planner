@@ -58,11 +58,13 @@ export default function DayGroup({ day, date, isoDate }: DayGroupProps) {
       return;
     }
 
+    const dateForRequest = isoDate;
+
     async function loadEntries() {
       try {
         setIsLoading(true);
         setLoadError(null);
-        const entries = await fetchEntriesByDate(isoDate);
+        const entries = await fetchEntriesByDate(dateForRequest);
         setTickets(entries.map(mapEntryToTicket));
       } catch (err) {
         setLoadError(
