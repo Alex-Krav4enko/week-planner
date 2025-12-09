@@ -74,7 +74,34 @@ VITE_API_BASE_URL=https://api.example.com
 2. `npm run dev` – фронт на `http://localhost:5173`, backend по `VITE_API_BASE_URL`.
 3. Для e2e/интеграций можно поднять backend через docker-compose и выставить порт 5001.
 
+## Деплой на AWS EC2
+
+Проект настроен для автоматического деплоя на AWS EC2 через GitHub Actions.
+
+### Документация по деплою
+
+- **[Быстрый старт](./deploy/QUICK_START.md)** - минимальные шаги для запуска
+- **[Полная инструкция](./deploy/EC2_SETUP.md)** - детальное руководство по настройке EC2
+- **[Nginx конфиг для фронтенда](./deploy/nginx-frontend.conf)**
+- **[Nginx конфиг для API](./deploy/nginx-api.conf)**
+
+### Процесс деплоя
+
+При пуше в `main` GitHub Actions автоматически:
+1. Запускает линтер и тесты
+2. Собирает production build с `VITE_API_BASE_URL`
+3. Загружает файлы на EC2 через rsync
+
+### Необходимые GitHub Secrets
+
+- `EC2_SSH_KEY` - приватный SSH ключ для доступа к серверу
+- `EC2_HOST` - IP адрес или домен EC2 инстанса
+- `EC2_USER` - имя пользователя (`ec2-user` или `ubuntu`)
+- `VITE_API_BASE_URL` - URL бэкенд API (например, `https://api.yourdomain.com`)
+
+См. [deploy/EC2_SETUP.md](./deploy/EC2_SETUP.md) для подробных инструкций.
+
 ## TODO/идеи
 - Добавить тесты для `DayGroup` и API-хуков.
 - Настроить e2e (Playwright) для сценария создания записи.
-- Описать скрипт деплоя (scp/rsync/Docker) и `.env.production`.
+- Настроить мониторинг и алерты для production.
