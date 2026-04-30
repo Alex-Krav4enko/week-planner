@@ -1,13 +1,29 @@
 import { describe, it, vi, afterEach, expect } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import WeekPage from './WeekPage';
 import * as entriesApi from '../api/entries';
 
 vi.mock('../api/entries');
 vi.mock('../WeekNavigation', () => ({
-  default: ({ weekTitle }: { weekTitle: string }) => (
-    <div data-testid="week-navigation">{weekTitle}</div>
+  default: ({
+    weekTitle,
+    onPrev,
+    onNext,
+  }: {
+    weekTitle: string;
+    onPrev: () => void;
+    onNext: () => void;
+  }) => (
+    <div data-testid="week-navigation">
+      <button data-testid="prev-week" onClick={onPrev}>
+        prev
+      </button>
+      <span>{weekTitle}</span>
+      <button data-testid="next-week" onClick={onNext}>
+        next
+      </button>
+    </div>
   ),
 }));
 
@@ -16,13 +32,13 @@ describe('WeekPage', () => {
     vi.clearAllMocks();
   });
 
-  it('renders all days and displays summary hours', async () => {
+  it('renders 7 day cards and displays summary hours', async () => {
     vi.spyOn(entriesApi, 'fetchEntriesSummary').mockResolvedValue([
-      { date: '2025-11-25T00:00:00.000Z', totalHours: 3 },
+      { date: '2026-04-27T00:00:00.000Z', totalHours: 3 },
     ]);
 
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={['/?from=2026-04-27']}>
         <WeekPage />
       </MemoryRouter>,
     );
@@ -50,5 +66,56 @@ describe('WeekPage', () => {
       ).toBeInTheDocument(),
     );
   });
-});
 
+  it('loads previous week when prev button is clicked', async () => {
+    vi.spyOn(entriesApi, 'fetchEntriesSummary').mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={['/?from=2026-04-27']}>
+        <WeekPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() =>
+      expect(entriesApi.fetchEntriesSummary).toHaveBeenCalledWith(
+        '2026-04-27',
+        '2026-05-03',
+      ),
+    );
+
+    fireEvent.click(screen.getByTestId('prev-week'));
+
+    await waitFor(() =>
+      expect(entriesApi.fetchEntriesSummary).toHaveBeenCalledWith(
+        '2026-04-20',
+        '2026-04-26',
+      ),
+    );
+  });
+
+  it('loads next week when next button is clicked', async () => {
+    vi.spyOn(entriesApi, 'fetchEntriesSummary').mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={['/?from=2026-04-27']}>
+        <WeekPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() =>
+      expect(entriesApi.fetchEntriesSummary).toHaveBeenCalledWith(
+        '2026-04-27',
+        '2026-05-03',
+      ),
+    );
+
+    fireEvent.click(screen.getByTestId('next-week'));
+
+    await waitFor(() =>
+      expect(entriesApi.fetchEntriesSummary).toHaveBeenCalledWith(
+        '2026-05-04',
+        '2026-05-10',
+      ),
+    );
+  });
+});

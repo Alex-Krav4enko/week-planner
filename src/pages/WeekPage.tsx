@@ -1,24 +1,49 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import styles from './WeekPage.module.css';
 import WeekNavigation from '../WeekNavigation';
-import { getTodayIsoDate, weekDays, weekTitle } from '../data/weekDays';
+import {
+  getTodayIsoDate,
+  getStartOfWeek,
+  getWeekDays,
+  getWeekTitle,
+  toLocalISODate,
+} from '../data/weekDays';
 import { fetchEntriesSummary } from '../api/entries';
 
 export default function WeekPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const today = getTodayIsoDate();
+
+  const fromParam = searchParams.get('from');
+  const weekStart = (() => {
+    if (fromParam) {
+      const parsed = new Date(fromParam);
+      if (!isNaN(parsed.getTime())) {
+        return getStartOfWeek(parsed);
+      }
+    }
+    return getStartOfWeek(new Date());
+  })();
+  const from = toLocalISODate(weekStart);
+
+  const weekDays = getWeekDays(weekStart);
+  const weekTitle = getWeekTitle(weekDays);
+
   const [summary, setSummary] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const endDate = new Date(from);
+    endDate.setDate(endDate.getDate() + 6);
+    const to = toLocalISODate(endDate);
+
     async function loadSummary() {
       try {
         setIsLoading(true);
         setError(null);
-        const from = weekDays[0].isoDate;
-        const to = weekDays[weekDays.length - 1].isoDate;
         const data = await fetchEntriesSummary(from, to);
         const totals = data.reduce<Record<string, number>>((acc, item) => {
           const dateKey = item.date.includes('T')
@@ -36,18 +61,32 @@ export default function WeekPage() {
     }
 
     loadSummary();
-  }, []);
+  }, [from]);
+
+  const shiftWeek = (days: number) => {
+    const newStart = new Date(from);
+    newStart.setDate(newStart.getDate() + days);
+    setSearchParams({ from: toLocalISODate(newStart) });
+  };
 
   return (
     <div className={styles.container}>
-      <WeekNavigation weekTitle={weekTitle} />
-      {error && <div className={styles.error}>Не удалось загрузить данные: {error}</div>}
+      <WeekNavigation
+        weekTitle={weekTitle}
+        onPrev={() => shiftWeek(-7)}
+        onNext={() => shiftWeek(7)}
+      />
+      {error && (
+        <div className={styles.error}>Не удалось загрузить данные: {error}</div>
+      )}
       <div className={styles.dayGrid}>
         {weekDays.map((day) => (
           <div
             key={day.isoDate}
             className={`${styles.dayCard} ${day.isoDate === today ? styles.currentDay : ''}`}
-            onClick={() => navigate(`/day/${encodeURIComponent(day.name)}`)}
+            onClick={() =>
+              navigate(`/day/${encodeURIComponent(day.name)}?from=${from}`)
+            }
           >
             <div className={styles.dayName}>{day.name}</div>
             <div className={styles.dayDate}>{day.dateLabel}</div>
