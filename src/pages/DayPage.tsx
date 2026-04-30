@@ -4,13 +4,9 @@ import styles from './DayPage.module.css';
 import {
   DAY_NAMES,
   getStartOfWeek,
+  getWeekDays,
   toLocalISODate,
 } from '../data/weekDays';
-
-const russianDateFormatter = new Intl.DateTimeFormat('ru-RU', {
-  day: 'numeric',
-  month: 'long',
-});
 
 export default function DayPage() {
   const { day } = useParams<{ day: string }>();
@@ -36,13 +32,12 @@ export default function DayPage() {
   let dateLabel: string | undefined;
 
   if (dayIndex >= 0) {
-    const date = new Date(weekStart);
-    date.setDate(weekStart.getDate() + dayIndex);
-    isoDate = toLocalISODate(date);
-    dateLabel = russianDateFormatter.format(date);
+    const day = getWeekDays(weekStart)[dayIndex];
+    isoDate = day.isoDate;
+    dateLabel = day.dateLabel;
   }
 
-  const backUrl = fromParam ? `/?from=${fromParam}` : '/';
+  const backUrl = fromParam ? `/?from=${toLocalISODate(weekStart)}` : '/';
 
   return (
     <div className={styles.container}>
