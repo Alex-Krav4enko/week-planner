@@ -36,7 +36,7 @@ export default function WeekPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const endDate = new Date(from);
+    const endDate = new Date(`${from}T00:00:00`);
     endDate.setDate(endDate.getDate() + 6);
     const to = toLocalISODate(endDate);
 
@@ -64,7 +64,7 @@ export default function WeekPage() {
   }, [from]);
 
   const shiftWeek = (days: number) => {
-    const newStart = new Date(from);
+    const newStart = new Date(`${from}T00:00:00`);
     newStart.setDate(newStart.getDate() + days);
     setSearchParams({ from: toLocalISODate(newStart) });
   };

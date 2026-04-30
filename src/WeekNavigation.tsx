@@ -13,7 +13,7 @@ export default function WeekNavigation({
 }: WeekNavigationProps) {
   return (
     <div className={styles.weekNavigation}>
-      <button className={styles.navButton} onClick={onPrev}>
+      <button className={styles.navButton} onClick={onPrev} aria-label="Предыдущая неделя">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="w-6 h-6"
@@ -30,7 +30,7 @@ export default function WeekNavigation({
         </svg>
       </button>
       <span className={styles.weekTitle}>{weekTitle}</span>
-      <button className={styles.navButton} onClick={onNext}>
+      <button className={styles.navButton} onClick={onNext} aria-label="Следующая неделя">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="w-6 h-6"
