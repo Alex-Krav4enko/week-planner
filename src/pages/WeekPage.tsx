@@ -19,7 +19,7 @@ export default function WeekPage() {
   const fromParam = searchParams.get('from');
   const weekStart = (() => {
     if (fromParam) {
-      const parsed = new Date(fromParam);
+      const parsed = new Date(`${fromParam}T00:00:00`);
       if (!isNaN(parsed.getTime())) {
         return getStartOfWeek(parsed);
       }
