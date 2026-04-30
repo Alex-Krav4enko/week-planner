@@ -1,9 +1,19 @@
 import styles from './WeekNavigation.module.css';
 
-export default function WeekNavigation({ weekTitle }: { weekTitle: string }) {
+interface WeekNavigationProps {
+  weekTitle: string;
+  onPrev: () => void;
+  onNext: () => void;
+}
+
+export default function WeekNavigation({
+  weekTitle,
+  onPrev,
+  onNext,
+}: WeekNavigationProps) {
   return (
     <div className={styles.weekNavigation}>
-      <button className={styles.navButton}>
+      <button className={styles.navButton} onClick={onPrev}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="w-6 h-6"
@@ -20,7 +30,7 @@ export default function WeekNavigation({ weekTitle }: { weekTitle: string }) {
         </svg>
       </button>
       <span className={styles.weekTitle}>{weekTitle}</span>
-      <button className={styles.navButton}>
+      <button className={styles.navButton} onClick={onNext}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="w-6 h-6"
