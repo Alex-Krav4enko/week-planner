@@ -1,11 +1,11 @@
-const DAY_NAMES = [
-  'Понедельник',
-  'Вторник',
-  'Среда',
-  'Четверг',
-  'Пятница',
-  'Суббота',
-  'Воскресенье',
+export const DAY_NAMES = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
 ];
 
 const russianDateFormatter = new Intl.DateTimeFormat('ru-RU', {
@@ -13,48 +13,13 @@ const russianDateFormatter = new Intl.DateTimeFormat('ru-RU', {
   month: 'long',
 });
 
-const startOfWeek = getStartOfWeek(new Date());
-
 export interface WeekDay {
   name: string;
   isoDate: string;
   dateLabel: string;
 }
 
-export const weekDays: WeekDay[] = DAY_NAMES.map((name, index) => {
-  const date = new Date(startOfWeek);
-  date.setDate(startOfWeek.getDate() + index);
-  const isoDate = toLocalISODate(date);
-
-  return {
-    name,
-    isoDate,
-    dateLabel: russianDateFormatter.format(date),
-  };
-});
-
-export const weekTitle = `Неделя с ${weekDays[0].dateLabel} по ${weekDays[weekDays.length - 1].dateLabel}`;
-
-export function findWeekDayByName(name?: string) {
-  if (!name) {
-    return undefined;
-  }
-
-  return weekDays.find((day) => day.name === name);
-}
-
-export function getTodayIsoDate() {
-  return toLocalISODate(new Date());
-}
-
-export function toLocalISODate(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function getStartOfWeek(date: Date) {
+export function getStartOfWeek(date: Date): Date {
   const start = new Date(date);
   const day = start.getDay();
   const diff = day === 0 ? -6 : 1 - day;
@@ -63,3 +28,29 @@ function getStartOfWeek(date: Date) {
   return start;
 }
 
+export function getWeekDays(startDate: Date): WeekDay[] {
+  return DAY_NAMES.map((name, index) => {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + index);
+    return {
+      name,
+      isoDate: toLocalISODate(date),
+      dateLabel: russianDateFormatter.format(date),
+    };
+  });
+}
+
+export function getWeekTitle(days: WeekDay[]): string {
+  return `Неделя с ${days[0].dateLabel} по ${days[days.length - 1].dateLabel}`;
+}
+
+export function getTodayIsoDate(): string {
+  return toLocalISODate(new Date());
+}
+
+export function toLocalISODate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
